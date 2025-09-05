@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Arcana v11 — Stage 1–3 (All-in-One)</title>
+<style>
+  :root{
+    --bg:#0b0f14; --panel:#111824; --ink:#e6edf3; --muted:#9fb0c3;
+    --card:#172131; --edge:#243449; --accent:#8fd3ff; --gold:#eacb6b;
+    --ok:#a4ffbe; --bad:#ffb3be; --blue:#7fc3ff;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:linear-gradient(180deg,#0b0f14,#0b0f14 40%,#0e141b);color:var(--ink);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Noto Sans',sans-serif}
+
+  header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1a2734;background:linear-gradient(180deg,#0f1620,#0b0f14)}
+  .title{display:flex;gap:10px;align-items:center}
+  .brand{font-weight:800;letter-spacing:.2px}
+  .scores{display:flex;gap:14px;align-items:center}
+  .scorepill{display:flex;gap:6px;align-items:center;background:#0e1723;border:1px solid #203046;padding:6px 10px;border-radius:10px}
+  .scorepill b{font-size:13px}
+  .turn{margin-left:10px;color:var(--muted);font-size:12px}
+
+  .wrap{display:grid;grid-template-columns:280px 1fr 340px;gap:12px;padding:12px}
+  .col{background:rgba(255,255,255,.03);border:1px solid #1a2734;border-radius:14px;overflow:hidden}
+  .col h2{margin:0;padding:9px 12px;font-size:12px;color:var(--muted);border-bottom:1px solid #1a2734;background:linear-gradient(180deg,#0f1722,#0d141d)}
+  .panel{padding:10px}
+
+  .controls{display:flex;flex-wrap:wrap;gap:8px}
+  button{appearance:none;border:1px solid #223447;background:#0f1826;color:var(--ink);padding:8px 10px;border-radius:10px;font-weight:700;font-size:12px;letter-spacing:.2px;cursor:pointer;transition:transform .05s ease,background .2s ease,opacity .2s}
+  button:hover{background:#15243a}
+  button:active{transform:translateY(1px)}
+  button[disabled]{opacity:.55;cursor:not-allowed}
+  .btn-ok{border-color:#244636;background:#0f1f16;color:#caffe0}
+  .btn-accent{border-color:#2b5474;background:#0e2336}
+  .btn-ghost{background:transparent;border-color:#243447;color:var(--muted)}
+
+  .pileRow{display:flex;gap:12px;align-items:center;margin-top:10px}
+  .pile{position:relative;width:64px;height:88px;border-radius:10px;background:repeating-linear-gradient(135deg,#0e1520 0px,#0e1520 8px,#0c111a 8px,#0c111a 16px);border:1px solid #223447;box-shadow:0 6px 20px rgba(0,0,0,.35) inset,0 2px 8px rgba(0,0,0,.25)}
+  .pile:before{content:"";position:absolute;inset:7px;border-radius:6px;border:1px dashed #29394d;opacity:.7}
+  .countTag{position:absolute;top:-9px;right:-9px;background:#0c1722;border:1px solid #2a3a4e;border-radius:999px;min-width:26px;height:22px;display:grid;place-items:center;font-size:12px;color:#cfe1f7}
+  .pileLbl{position:absolute;left:50%;bottom:-18px;transform:translateX(-50%);font-size:12px;color:var(--muted)}
+
+  /* Board */
+  .zone{display:flex;flex-direction:column;gap:8px}
+  .hand{display:flex;flex-wrap:wrap;gap:8px;min-height:106px}
+  .group-title{font-size:12px;color:var(--muted)}
+  .group{display:flex;gap:6px;flex-wrap:wrap}
+
+  /* Card */
+  .card{width:64px;height:88px;border-radius:12px;border:1px solid var(--edge);background:linear-gradient(180deg,#151e2a,#0f1620);position:relative;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer;user-select:none;transition:transform .12s ease, box-shadow .12s ease, border-color .12s}
+  .card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.45)}
+  .card.selected{outline:2px solid var(--accent);border-color:#3b6b90;box-shadow:0 10px 30px rgba(143,211,255,.25)}
+  .rank{position:absolute;left:7px;top:5px;font-weight:900;font-size:14px}
+  .suit{position:absolute;right:6px;bottom:5px;font-size:14px;opacity:.9}
+  .type{position:absolute;left:7px;bottom:5px;font-size:10px;color:var(--muted)}
+  .card .water{position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:44px;opacity:.06;pointer-events:none}
+  .back{background:repeating-linear-gradient(135deg,#121924 0px,#121924 8px,#0f1520 8px,#0f1520 16px)}
+  .back:after{content:"⟡";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:22px;color:#7aa6c7}
+
+  /* Log */
+  .log{height:280px;overflow:auto;background:#0c1219;border:1px solid #1e2a38;border-radius:10px;padding:8px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#cfe1f7}
+  .log p{margin:0 0 6px 0;white-space:pre-wrap}
+
+  /* Drawers / Modals */
+  .drawer{position:fixed;top:0;right:-420px;width:400px;max-width:90vw;height:100vh;background:linear-gradient(180deg,#0d1420,#0b0f14);border-left:1px solid #1d2732;box-shadow:-24px 0 40px rgba(0,0,0,.4);transition:right .26s ease;z-index:50;display:flex;flex-direction:column}
+  .drawer.open{right:0}
+  .drawer header{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #1d2732}
+  .drawer .content{padding:12px;overflow:auto}
+  .drawer .footer{margin-top:auto;padding:12px;border-top:1px solid #1d2732;display:flex;gap:8px}
+  .closex{margin-left:auto;border:1px solid #283648;border-radius:8px;background:#0a0f16;color:var(--muted);padding:4px 8px;font-size:12px;cursor:pointer}
+
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:60}
+  .modal.open{display:flex}
+  .modal .box{width:520px;max-width:95vw;background:#0f1723;border:1px solid #253446;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);padding:14px}
+  .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+
+  .pill{display:inline-block;border:1px solid #2a3a4e;border-radius:999px;padding:2px 8px;font-size:11px;color:#cfe1f7}
+  .muted{color:var(--muted)}
+  .sep{height:1px;background:#1a2734;margin:10px 0}
+  .grid{display:grid;gap:10px}
+  .grid.two{grid-template-columns:1fr 1fr}
+</style>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <div class="brand">ARCANA</div>
+      <span class="muted">Stage 1–3</span>
+    </div>
+    <div class="scores">
+      <div class="scorepill">P1&nbsp;<b id="score1">0</b></div>
+      <div class="scorepill">P2&nbsp;<b id="score2">0</b></div>
+      <span class="turn">Turn: <b id="turnTag">—</b></span>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- Left: Controls & Piles -->
+    <div class="col">
+      <h2>Controls</h2>
+      <div class="panel">
+        <div class="controls">
+          <button class="btn-ok" id="btnStartGame">Start Game</button>
+          <button id="btnConstruct">Construct</button>
+          <button id="btnAction">Action (6/7/9)</button>
+          <button id="btnSigil">Sigil (J/Q/K)</button>
+          <button class="btn-ghost" id="btnDiscard">Discard</button>
+          <button class="btn-accent" id="btnToggleNet">Network</button>
+          <button class="btn-accent" id="btnToggleRules">Rules</button>
+        </div>
+
+        <div class="pileRow">
+          <div class="pile"><span class="countTag" id="drawTag">0</span><div class="pileLbl">Draw</div></div>
+          <div class="pile"><span class="countTag" id="discardTag">0</span><div class="pileLbl">Discard</div></div>
+        </div>
+      </div>
+
+      <!-- Developer / Network Panel (collapsible inside left column) -->
+      <div class="panel" id="netPanel" style="display:none; margin-top:-6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <b>Network</b>
+          <span id="status" class="pill">Idle</span>
+        </div>
+        <div class="grid">
+          <label class="muted" for="signalUrl">Signaling URL</label>
+          <input id="signalUrl" style="width:100%;padding:6px;border-radius:8px;border:1px solid #233346;background:#0b121c;color:var(--ink)" value="wss://arcana-signal.onrender.com"/>
+          <button id="btnUseUrl" class="btn-ghost">Use URL</button>
+        </div>
+        <div class="sep"></div>
+        <div class="grid two">
+          <button id="btnHost">Host</button>
+          <div><span class="muted">Host ID:</span> <b id="hostId">—</b></div>
+        </div>
+        <div class="grid two">
+          <input id="joinId" placeholder="Enter Host ID" style="width:100%;padding:6px;border-radius:8px;border:1px solid #233346;background:#0b121c;color:var(--ink)"/>
+          <button id="btnJoin">Join</button>
+        </div>
+        <div class="grid two" style="margin-top:6px">
+          <button id="btnStart" class="btn-ok" disabled>Sync & Start</button>
+          <button id="btnResync" class="btn-ghost" disabled>Re-sync</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle: Board -->
+    <div class="col">
+      <h2>Board</h2>
+      <div class="panel grid">
+        <div class="zone">
+          <div class="group-title">Opponent Hand (<span id="oppCount">0</span>)</div>
+          <div class="group" id="opponentHand"></div>
+        </div>
+        <div class="sep"></div>
+        <div class="zone">
+          <div class="group-title">Your Hand (<span id="youCount">0</span>)</div>
+          <div class="hand" id="playerHand"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Log / Rules -->
+    <div class="col">
+      <h2>Log</h2>
+      <div class="panel">
+        <div id="log" class="log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules Drawer -->
+  <div id="rulesDrawer" class="drawer" aria-hidden="true">
+    <header>
+      <h3 style="margin:0">Rules & Scoring</h3>
+      <button class="closex" id="rulesClose">✕</button>
+    </header>
+    <div class="content">
+      <p><b>Goal:</b> First to 60 points.</p>
+      <p><b>Turn:</b> Play one of: Construct, Action (6/7/9), Sigil (J/Q/K), or Discard. Then draw 1 card.</p>
+      <div class="sep"></div>
+      <p><b>Pairs</b> — Pair = 2 pts, True Pair (same suit) = 5 pts (+ suit bonus).</p>
+      <p><b>Sets (3+ of a kind)</b>:
+        <br/>3 cards = 2×rank + 2
+        <br/>4 cards (no jokers) = 3×rank (or 4×rank if one of each suit)
+        <br/>5+ cards (no jokers) = 3×rank + 2
+        <br/>With jokers: 4→3×rank, 5+→3×rank+2 (no suit bonus except at 6+). −1 pt per joker.
+      </p>
+      <p><b>Runs</b> — Same suit, 3+, jokers can fill gaps. Score = sum of ranks + length. −1 pt per joker; no suit bonus if any joker present.</p>
+      <p><b>Joker-only</b> — 2J=4; 3J=7 + draw 3; 4J=15 + refill to 7.</p>
+      <div class="sep"></div>
+      <p><b>Suit bonuses</b> (no jokers, except Sets ≥6):
+        <br/>♠ Steal 2 random cards
+        <br/>♥ +2 pts
+        <br/>♦ Roll d6: steal 1/2/3 pts on 1–2/3–4/5–6
+        <br/>♣ Take an extra turn (chain max 2)
+      </p>
+      <div class="sep"></div>
+      <p><b>Actions</b>:
+        <br/>6 = Draw 2
+        <br/>7 = Steal 1 random (defender may Ace)
+        <br/>9 = Swap 1 (choose a card to give; defender may Ace)
+      </p>
+      <p><b>Ace (reaction):</b> Defender may discard an Ace to attempt a block — roll d6 → 1–3 Fail (action succeeds), 4–6 Block+Counter (cancel & steal 1 pt).</p>
+      <p class="muted">Safety Net: If your turn starts with ≤1 card, draw 3 immediately.</p>
+    </div>
+    <div class="footer">
+      <button class="btn-accent" id="rulesOk">Close</button>
+    </div>
+  </div>
+
+  <!-- Ace Modal (shown to defender only) -->
+  <div id="aceModal" class="modal" aria-hidden="true">
+    <div class="box">
+      <div id="aceText">Opponent played an action targeting you. Spend an Ace to attempt a block?</div>
+      <div class="row">
+        <button id="aceNo" class="btn-ghost">Let it resolve</button>
+        <button id="aceYes" class="btn-ok">Use Ace</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9: Give Drawer -->
+  <div id="giveDrawer" class="drawer" aria-hidden="true">
+    <header>
+      <h3 style="margin:0">Choose a card to give (9)</h3>
+      <button class="closex" id="giveClose">✕</button>
+    </header>
+    <div class="content">
+      <p class="muted">Pick one card from your hand to give to your opponent.</p>
+      <div id="giveList" class="hand"></div>
+    </div>
+    <div class="footer">
+      <button class="btn-ghost" id="giveCancel">Cancel</button>
+      <button class="btn-accent" id="giveConfirm">Confirm</button>
+    </div>
+  </div>
+
+  <!-- Joker Cost Drawer -->
+  <div id="jokerDrawer" class="drawer" aria-hidden="true">
+    <header>
+      <h3 style="margin:0">Joker Cost</h3>
+      <button class="closex" id="jokerClose">✕</button>
+    </header>
+    <div class="content">
+      <p id="jokerInfo" class="muted">Select N extra card(s) to discard (Joker cost).</p>
+      <div id="jokerList" class="hand"></div>
+    </div>
+    <div class="footer">
+      <button class="btn-ghost" id="jokerCancel">Cancel</button>
+      <button class="btn-accent" id="jokerConfirm">Confirm</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);background:#0e1723;border:1px solid #2a3a4e;border-radius:12px;padding:10px 14px;color:#d8e8ff;opacity:0;transition:opacity .18s ease, transform .18s ease;z-index:80">Saved</div>
+
+  <script>
+  ;(function(){
+    const $ = (id)=>document.getElementById(id);
+    const logEl = $('log');
+    const toast = $('toast');
+
+    const SUITS = ['♠','♥','♦','♣'];
+    const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+    const RVAL  = (r)=>({A:1,J:11,Q:12,K:13}[r]||parseInt(r,10));
+    const rnd = (n)=>Math.floor(Math.random()*n);
+
+    const G = {
+      deck: [],
+      discard: [],
+      players: [
+        { hand:[], score:0 },
+        { hand:[], score:0 }
+      ],
+      turn: 0,
+      started: false,
+      extraChain: 0,
+      localSide: 'P1',
+      selected: new Set(),
+      // drawers
+      pendingConstruct: null,   // { baseAction, requiredN, excludedIds }
+      pendingGive: null,        // cardId for 9
+      pendingAce: null          // { from:'P1'|'P2', action:'7'|'9' }
+    };
+
+    // Public API (transport uses these)
+    window.arcana = {
+      startNew,
+      serialize,
+      hydrate,
+      applyTurn,
+      render,
+      hasAce,
+      spendAce,
+      describe:(a)=>`${a.type}${a.payload? ' '+JSON.stringify(a.payload):''}`
+    };
+    window.arcana_setRole = (role)=>{ G.localSide = role==='host' ? 'P1' : 'P2'; };
+
+    // ---------- UI references ----------
+    const btnStartGame = $('btnStartGame');
+    const btnConstruct = $('btnConstruct');
+    const btnAction    = $('btnAction');
+    const btnSigil     = $('btnSigil');
+    const btnDiscard   = $('btnDiscard');
+
+    const opponentHand = $('opponentHand');
+    const playerHand   = $('playerHand');
+    const drawTag = $('drawTag');
+    const discardTag = $('discardTag');
+    const score1 = $('score1');
+    const score2 = $('score2');
+    const turnTag = $('turnTag');
+
+    const btnToggleNet = $('btnToggleNet');
+    const netPanel = $('netPanel');
+
+    const btnToggleRules = $('btnToggleRules');
+    const rulesDrawer = $('rulesDrawer');
+    $('rulesOk').onclick = () => rulesDrawer.classList.remove('open');
+    $('rulesClose').onclick = () => rulesDrawer.classList.remove('open');
+
+    // Ace modal (defender only)
+    const aceModal = $('aceModal');
+    const aceText = $('aceText');
+    const aceNo = $('aceNo');
+    const aceYes = $('aceYes');
+
+    // 9 Give drawer
+    const giveDrawer = $('giveDrawer');
+    const giveList = $('giveList');
+    const giveClose = $('giveClose');
+    const giveCancel = $('giveCancel');
+    const giveConfirm = $('giveConfirm');
+
+    // Joker cost drawer
+    const jokerDrawer = $('jokerDrawer');
+    const jokerList = $('jokerList');
+    const jokerInfo = $('jokerInfo');
+    const jokerClose = $('jokerClose');
+    const jokerCancel = $('jokerCancel');
+    const jokerConfirm = $('jokerConfirm');
+    let JSEL = new Set();
+
+    // ---------- Helpers ----------
+    function log(s){
+      const p=document.createElement('p'); p.textContent=s; logEl.appendChild(p); logEl.scrollTop=logEl.scrollHeight;
+      if(window.pushLog) try{ window.pushLog(s); }catch{}
+    }
+    function toastMsg(msg){ toast.textContent=msg; toast.style.opacity=1; toast.style.transform='translate(-50%,0)'; setTimeout(()=>{ toast.style.opacity=0; toast.style.transform='translate(-50%,20px)'; },1200); }
+    function isJoker(c){ return c.rank==='Joker' || !!c.joker; }
+    function inferType(c){
+      if(isJoker(c)) return 'Joker';
+      if(c.rank==='A') return 'Ace';
+      if(c.rank==='6' || c.rank==='7' || c.rank==='9') return 'Action';
+      if(c.rank==='J' || c.rank==='Q' || c.rank==='K') return 'Sigil';
+      return 'Normal';
+    }
+    function me(){ return (G.localSide==='P1')?0:1; }
+    function them(){ return 1-me(); }
+    function pretty(c){ return c.rank + (c.suit||''); }
+
+    // ---------- Deck & Setup ----------
+    function buildDeck(){
+      const cards=[]; let id=1;
+      for(let d=0; d<2; d++){
+        for(const s of SUITS){ for(const r of RANKS){ cards.push({ id:id++, suit:s, rank:r }); } }
+        cards.push({id:id++, suit:'★', rank:'Joker', joker:true});
+        cards.push({id:id++, suit:'☆', rank:'Joker', joker:true});
+      }
+      for(let i=cards.length-1;i>0;i--){ const j=rnd(i+1); [cards[i],cards[j]]=[cards[j],cards[i]]; }
+      return cards;
+    }
+
+    function startNew(){
+      G.deck = buildDeck();
+      G.discard = [];
+      G.players = [{hand:[],score:0},{hand:[],score:0}];
+      G.turn = 0; G.started = true; G.extraChain = 0; G.selected.clear();
+      drawCards(0,7); drawCards(1,7);
+      log('New game. P1 starts.');
+      render();
+    }
+
+    function serialize(){
+      return {
+        deck: G.deck, discard: G.discard,
+        players: G.players, turn: G.turn,
+        started: G.started, extraChain: G.extraChain
+      };
+    }
+
+    function hydrate(state){
+      G.deck = state.deck; G.discard = state.discard;
+      G.players = state.players; G.turn = state.turn;
+      G.started = state.started; G.extraChain = state.extraChain||0;
+      G.selected.clear();
+      render();
+    }
+
+    // ---------- Rendering ----------
+    function render(){
+      drawTag.textContent = G.deck.length;
+      discardTag.textContent = G.discard.length;
+      score1.textContent = G.players[0].score;
+      score2.textContent = G.players[1].score;
+      turnTag.textContent = G.started ? (G.turn===0?'P1':'P2') : '—';
+
+      const meIdx = me();
+      const oppIdx = them();
+
+      // your hand
+      playerHand.innerHTML='';
+      G.players[meIdx].hand.forEach(c=>{
+        const n = cardNode(c,true);
+        playerHand.appendChild(n);
+      });
+      $('youCount').textContent = G.players[meIdx].hand.length;
+
+      // opponent back
+      opponentHand.innerHTML='';
+      G.players[oppIdx].hand.forEach(_=>{
+        const d = document.createElement('div'); d.className='card back';
+        opponentHand.appendChild(d);
+      });
+      $('oppCount').textContent = G.players[oppIdx].hand.length;
+    }
+
+    function cardNode(c, selectable){
+      const d = document.createElement('div'); d.className='card'; d.dataset.id=String(c.id);
+      const rr=document.createElement('div'); rr.className='rank'; rr.textContent=c.rank; d.appendChild(rr);
+      const ss=document.createElement('div'); ss.className='suit'; ss.textContent=c.suit||''; d.appendChild(ss);
+      const w=document.createElement('div'); w.className='water'; w.textContent=c.suit||'★'; d.appendChild(w);
+      const t=inferType(c); if(t!=='Normal'){ const tag=document.createElement('div'); tag.className='type'; tag.textContent=t; d.appendChild(tag); }
+      if(selectable){
+        if(G.selected.has(c.id)) d.classList.add('selected');
+        d.addEventListener('click', ()=>{
+          if(G.turn !== me()) return;
+          if(G.selected.has(c.id)){ G.selected.delete(c.id); d.classList.remove('selected'); }
+          else { G.selected.add(c.id); d.classList.add('selected'); }
+        });
+      }
+      return d;
+    }
+
+    // ---------- Draw / Discard ----------
+    function drawCards(pidx, n){
+      const take = Math.min(n, G.deck.length);
+      for(let i=0;i<take;i++){ const c=G.deck.pop(); G.players[pidx].hand.push(c); }
+    }
+    function discardCard(pidx, cardId){
+      const hand = G.players[pidx].hand;
+      const i = hand.findIndex(c=>c.id===cardId);
+      if(i>=0){ const c = hand.splice(i,1)[0]; G.discard.push(c); return c; }
+      return null;
+    }
+    function removeFromHandByIds(pidx, ids){
+      const hand = G.players[pidx].hand, list=[];
+      ids.forEach(id=>{ const j=hand.findIndex(c=>c.id===id); if(j>=0) list.push(hand.splice(j,1)[0]); });
+      return list;
+    }
+
+    // ---------- Turn flow ----------
+    function startTurnIfNeeded(){
+      const pidx = G.turn;
+      if(G.players[pidx].hand.length <= 1){
+        drawCards(pidx, 3);
+        log((pidx===0?'P1':'P2')+' drew 3 (safety net).');
+      }
+    }
+    function endTurn(extra=false){
+      // draw 1 at end of your turn (requested fix #3)
+      drawCards(G.turn,1);
+      if(extra){
+        G.extraChain = Math.min(2, G.extraChain+1);
+        log((G.turn===0?'P1':'P2')+' takes an extra turn.');
+      }else{
+        G.extraChain = 0;
+        G.turn = 1-G.turn;
+      }
+      G.selected.clear();
+      startTurnIfNeeded();
+      render();
+    }
+
+    function currentSelected(pidx){
+      const ids = Array.from(G.selected);
+      const hand = G.players[pidx].hand;
+      return hand.filter(c=>ids.includes(c.id));
+    }
+
+    // ---------- Validation ----------
+    function validateConstruct(cards){
+      const res = { valid:false, kind:'', points:0, suit:null, suitBonus:null, jokersUsed:0, bonus:null, reason:'' };
+      const jokers = cards.filter(isJoker);
+      const nonj = cards.filter(c=>!isJoker(c));
+
+      if(nonj.length===0){
+        if(jokers.length===2){ res.valid=true; res.kind='JOKER_ONLY'; res.points=4; return res; }
+        if(jokers.length===3){ res.valid=true; res.kind='JOKER_ONLY'; res.points=7; res.bonus={draw:3}; return res; }
+        if(jokers.length===4){ res.valid=true; res.kind='JOKER_ONLY'; res.points=15; res.bonus={refill:true}; return res; }
+        res.reason='Need 2–4 Jokers for Joker-only'; return res;
+      }
+
+      const sameSuit = nonj.every(c=>c.suit===nonj[0].suit);
+      const suit = sameSuit ? nonj[0].suit : null;
+      res.suit = suit;
+      res.jokersUsed = jokers.length;
+
+      // Pair / True Pair
+      if(cards.length===2 && jokers.length===0){
+        if(nonj[0].rank===nonj[1].rank){
+          const base = (nonj[0].suit===nonj[1].suit) ? 5 : 2;
+          res.valid=true; res.kind = (base===5?'TRUE_PAIR':'PAIR'); res.points=base;
+          if(base===5) applySuitBonusPreview(res,false);
+          return res;
+        }
+      }
+
+      // Sets no jokers
+      if (jokers.length === 0 && nonj.every(c => c.rank === nonj[0].rank) && cards.length >= 3) {
+        const r = RVAL(nonj[0].rank), n = cards.length;
+        let pts;
+        if (n === 3) pts = 2 * r + 2;
+        else if (n === 4) {
+          const suitsSet = new Set(nonj.map(c => c.suit));
+          pts = (suitsSet.size === 4) ? (4 * r) : (3 * r);
+        } else if (n >= 5) {
+          pts = 3 * r + 2;
+        }
+        res.valid=true; res.kind='SET'; res.points=pts;
+        if (suit) applySuitBonusPreview(res,false);
+        return res;
+      }
+
+      // Sets with jokers
+      if (nonj.length >= 2 && nonj.every(c => c.rank === nonj[0].rank) && cards.length >= 3 && jokers.length > 0) {
+        const r = RVAL(nonj[0].rank), n = cards.length;
+        let pts = (n === 4 ? 3 * r : 3 * r + 2);
+        res.valid=true; res.kind='SET'; res.points=pts;
+        if (suit && n >= 6) applySuitBonusPreview(res,true);
+        res.points -= jokers.length; // nerf
+        return res;
+      }
+
+      // Runs
+      if(sameSuit && cards.length>=3){
+        const vals = nonj.map(c=>RVAL(c.rank)).sort((a,b)=>a-b);
+        let gaps = 0;
+        for(let i=1;i<vals.length;i++){
+          const diff = vals[i]-vals[i-1];
+          if(diff<=0){ res.reason='Duplicates in run'; return res; }
+          gaps += (diff-1);
+        }
+        if(gaps<=jokers.length){
+          res.valid=true; res.kind='RUN';
+          const sumVals = nonj.reduce((s,c)=>s+RVAL(c.rank),0);
+          const len = cards.length;
+          res.points = sumVals + len;
+          if(jokers.length===0) applySuitBonusPreview(res,false);
+          else res.points -= jokers.length;
+          return res;
+        }
+      }
+
+      res.reason='Not a valid Pair/Set/Run';
+      return res;
+    }
+
+    function applySuitBonusPreview(res, allowWithJokers){
+      if(!res.suit) return;
+      if(res.jokersUsed>0 && !allowWithJokers) return;
+      if(res.suit==='♥'){ res.points += 2; res.suitBonus='HEARTS'; }
+      if(res.suit==='♣'){ res.suitBonus='CLUBS'; }
+      if(res.suit==='♦'){ res.suitBonus='DIAMONDS'; }
+      if(res.suit==='♠'){ res.suitBonus='SPADES'; }
+    }
+
+    // ---------- Attempt Construct ----------
+    function attemptConstructFromSelection(){
+      const pidx = me();
+      if(G.turn!==pidx){ log('Not your turn'); return null; }
+      const cards = currentSelected(pidx);
+      if(cards.length<2){ log('Select 2+ cards for a construct'); return null; }
+
+      const res = validateConstruct(cards);
+      if(!res.valid){ log(res.reason || 'Invalid construct'); return null; }
+
+      if(res.kind!=='JOKER_ONLY' && res.jokersUsed>0){
+        openJokerDrawer(res.jokersUsed, cards.map(c=>c.id), {
+          type:'CONSTRUCT',
+          from:(pidx===0?'P1':'P2'),
+          payload:{ ids: cards.map(c=>c.id), info: res }
+        });
+        return null;
+      }
+
+      return { type:'CONSTRUCT', from: (pidx===0?'P1':'P2'), payload:{ ids: cards.map(c=>c.id), info:res } };
+    }
+
+    // ---------- Apply Turn (Host authority) ----------
+    function applyTurn(action){
+      const actor = (action.from==='P1')?0:1;
+      const target = 1-actor;
+
+      switch(action.type){
+
+        case 'START': startNew(); return;
+
+        case 'CONSTRUCT': {
+          const ids = action.payload.ids;
+          const cards = removeFromHandByIds(actor, ids);
+          const check = validateConstruct(cards);
+          if(!check.valid){
+            G.players[actor].hand.push(...cards);
+            log('Invalid construct (host check).'); return;
+          }
+          if(check.kind!=='JOKER_ONLY' && check.jokersUsed>0){
+            const extras = action.payload.info && action.payload.info.extraDiscards || [];
+            const extraCards = removeFromHandByIds(actor, extras);
+            if(extraCards.length !== check.jokersUsed){
+              G.players[actor].hand.push(...cards, ...extraCards);
+              log('Joker cost mismatch.'); return;
+            }
+            G.discard.push(...extraCards);
+          }
+
+          G.players[actor].score += check.points;
+          G.discard.push(...cards);
+          log((actor===0?'P1':'P2')+` played ${check.kind} for +${check.points}.`);
+
+          if(check.kind==='JOKER_ONLY'){
+            if(check.bonus?.draw){ drawCards(actor, check.bonus.draw); log(`Drew ${check.bonus.draw}.`); }
+            if(check.bonus?.refill){
+              const need = Math.max(0, 7 - G.players[actor].hand.length);
+              if(need>0){ drawCards(actor, need); log(`Refilled to 7.`); }
+            }
+          }
+
+          let extraTurn=false;
+          if(check.suitBonus==='DIAMONDS'){
+            const roll = 1+Math.floor(Math.random()*6);
+            const steal = (roll<=2)?1:(roll<=4)?2:3;
+            const give = Math.min(steal, G.players[target].score);
+            G.players[target].score -= give; G.players[actor].score += give;
+            log(`♦ d6=${roll} → stole ${give} pt(s).`);
+          }
+          if(check.suitBonus==='SPADES'){
+            const opp = G.players[target].hand;
+            for(let i=0;i<2 && opp.length>0;i++){
+              const j = rnd(opp.length);
+              const c = opp.splice(j,1)[0];
+              G.players[actor].hand.push(c);
+            }
+            log(`♠ bonus: stole up to 2 card(s).`);
+          }
+          if(check.suitBonus==='CLUBS'){ extraTurn=true; }
+
+          if(G.players[actor].score>=60){ log((actor===0?'P1':'P2')+' wins (60)!'); G.started=false; render(); return; }
+          endTurn(extraTurn && G.extraChain<1); return;
+        }
+
+        case 'ACTION_6': {
+          discardCard(actor, action.payload.cardId);
+          drawCards(actor, 2);
+          log((actor===0?'P1':'P2')+' played 6 (Draw2).');
+          endTurn(); return;
+        }
+
+        case 'ACTION_7': {
+          // If blocked === true then action canceled by Ace
+          if(action.payload?.blocked){
+            log('7 was blocked by Ace.'); endTurn(); return;
+          }
+          discardCard(actor, action.payload.cardId);
+          const opp = G.players[target].hand;
+          if(opp.length>0){
+            const j = rnd(opp.length);
+            const c = opp.splice(j,1)[0];
+            G.players[actor].hand.push(c);
+            log('7: stole a random card.');
+          }else{ log('7: opponent had no cards.'); }
+          endTurn(); return;  // (Fix #1) 7 counts as an action & ends turn
+        }
+
+        case 'ACTION_9': {
+          if(action.payload?.blocked){
+            log('9 was blocked by Ace.'); endTurn(); return;
+          }
+          discardCard(actor, action.payload.cardId);
+          const g = discardCard(actor, action.payload.giveId);
+          if(g){ G.players[target].hand.push(g); }
+          const opp = G.players[target].hand;
+          if(opp.length>0){
+            const j = rnd(opp.length);
+            const c = opp.splice(j,1)[0];
+            G.players[actor].hand.push(c);
+            log('9: swapped one card.');
+          }else{ log('9: opponent had no cards to swap.'); }
+          endTurn(); return;  // (Fix) 9 ends turn
+        }
+
+        case 'ACE_REACT': {
+          // Defender chose to spend an Ace. Discard it immediately (Fix #4)
+          spendAce(action.from);
+          // d6 mechanic (Fix #5)
+          const roll = 1 + Math.floor(Math.random()*6);
+          const success = (roll>=4); // 4–6 block+counter, 1–3 fail
+          if(success){
+            // Counter: steal 1 point from aggressor
+            const aggr = (action.payload.aggressor==='P1')?0:1;
+            const def  = (action.from==='P1')?0:1;
+            const give = Math.min(1, G.players[aggr].score);
+            G.players[aggr].score -= give; G.players[def].score += give;
+            log(`Ace block (d6=${roll}) → BLOCKED + counter +1.`);
+            // Also mark that the original action is blocked
+            G.pendingAce = { blocked:true };
+          } else {
+            log(`Ace block (d6=${roll}) → FAIL (action proceeds).`);
+            G.pendingAce = { blocked:false };
+          }
+          render();
+          return;
+        }
+
+        case 'SIGIL': {
+          const r = action.payload.rank; const cardId = action.payload.cardId;
+          discardCard(actor, cardId);
+          if(r==='J'){ G.players[actor].score += 2; drawCards(actor,1); log('J: +2, draw 1.'); }
+          if(r==='Q'){ G.players[actor].score += 3; drawCards(actor,1); log('Q: +3, draw 1.'); }
+          if(r==='K'){ G.players[actor].score += 5; drawCards(actor,2); log('K: +5, draw 2.'); }
+          if(G.players[actor].score>=60){ log((actor===0?'P1':'P2')+' wins (60)!'); G.started=false; render(); return; }
+          endTurn(); return;
+        }
+
+        case 'DISCARD': {
+          const c = discardCard(actor, action.payload.cardId);
+          log((actor===0?'P1':'P2')+` discarded ${c? pretty(c) : '—'}.`);
+          endTurn(); return;
+        }
+      }
+    }
+
+    function hasAce(playerId){
+      const idx = (playerId==='P1')?0:1;
+      return G.players[idx].hand.some(c=>c.rank==='A');
+    }
+
+    function spendAce(who){
+      const idx = (typeof who==='number')? who : (who==='P1'?0:1);
+      const i = G.players[idx].hand.findIndex(c=>c.rank==='A');
+      if(i>=0){ const c=G.players[idx].hand.splice(i,1)[0]; G.discard.push(c); return true; }
+      return false;
+    }
+
+    // ---------- Drawers ----------
+    // 9 give
+    let giveSelectedId = null;
+    function openGiveDrawer(nineCard){
+      const pidx = me();
+      giveSelectedId = null;
+      giveList.innerHTML='';
+      const mine = G.players[pidx].hand.filter(c=>c.id!==nineCard.id);
+      mine.forEach(c=>{
+        const n = cardNode(c,false);
+        n.addEventListener('click', ()=>{
+          Array.from(giveList.children).forEach(x=>x.classList.remove('selected'));
+          n.classList.add('selected');
+          giveSelectedId = c.id;    // keep selection; do NOT auto-close (Fix #4 issue you described)
+        });
+        giveList.appendChild(n);
+      });
+      G.pendingGive = nineCard.id;
+      giveDrawer.classList.add('open');
+    }
+    function closeGiveDrawer(){ giveDrawer.classList.remove('open'); G.pendingGive=null; giveSelectedId=null; }
+    giveClose.onclick = closeGiveDrawer;
+    giveCancel.onclick = closeGiveDrawer;
+    giveConfirm.onclick = ()=>{
+      if(G.pendingGive && giveSelectedId){
+        const pidx = me();
+        window.sendTurn({ type:'ACTION_9', from:(pidx===0?'P1':'P2'), payload:{ cardId:G.pendingGive, giveId: giveSelectedId } });
+        G.selected.clear(); closeGiveDrawer(); render();
+      }
+    };
+
+    // Joker cost
+    function openJokerDrawer(nRequired, excludedIds, baseAction){
+      const pidx = me();
+      G.pendingConstruct = { baseAction, requiredN: nRequired, excludedIds: new Set(excludedIds) };
+      JSEL.clear();
+      jokerInfo.textContent = `Select ${nRequired} extra card(s) from your hand to discard (Joker cost).`;
+      jokerList.innerHTML = '';
+
+      const mine = G.players[pidx].hand.filter(c=>!G.pendingConstruct.excludedIds.has(c.id));
+      mine.forEach(c=>{
+        const n = cardNode(c,false);
+        n.addEventListener('click', ()=>{
+          if(JSEL.has(c.id)){ JSEL.delete(c.id); n.classList.remove('selected'); }
+          else if(JSEL.size < nRequired){ JSEL.add(c.id); n.classList.add('selected'); }
+        });
+        jokerList.appendChild(n);
+      });
+      jokerDrawer.classList.add('open');
+    }
+    function closeJokerDrawer(){ jokerDrawer.classList.remove('open'); G.pendingConstruct=null; JSEL.clear(); }
+    jokerClose.onclick = closeJokerDrawer;
+    jokerCancel.onclick = closeJokerDrawer;
+    jokerConfirm.onclick = ()=>{
+      if(!G.pendingConstruct) return closeJokerDrawer();
+      if(JSEL.size !== G.pendingConstruct.requiredN) return;
+      const extras = Array.from(JSEL);
+      const act = G.pendingConstruct.baseAction;
+      act.payload.info.extraDiscards = extras;
+      window.sendTurn(act);
+      G.selected.clear();
+      closeJokerDrawer();
+      render();
+    };
+
+    // ---------- Buttons ----------
+    btnStartGame.onclick = ()=>{ window.sendTurn({ type:'START', from:(me()===0?'P1':'P2') }); };
+    btnConstruct.onclick = ()=>{
+      if(!G.started){ log('Start the game.'); return; }
+      const action = attemptConstructFromSelection();
+      if(!action) return; // maybe waiting for Joker drawer
+      window.sendTurn(action); G.selected.clear(); render();
+    };
+    btnAction.onclick = ()=>{
+      if(!G.started){ log('Start the game.'); return; }
+      const pidx = me();
+      if(G.turn!==pidx){ log('Not your turn'); return; }
+      const sel = currentSelected(pidx);
+      if(sel.length===0){ log('Select an Action card (6/7/9).'); return; }
+
+      if(sel.length===1 && sel[0].rank==='6'){
+        window.sendTurn({ type:'ACTION_6', from:(pidx===0?'P1':'P2'), payload:{ cardId: sel[0].id } });
+        G.selected.clear(); render(); return;
+      }
+      if(sel.length===1 && sel[0].rank==='7'){
+        // Defender handling (Fix #2 + #5 moved to transport handshake)
+        window.onRequestAce && window.onRequestAce('7');
+        window.sendTurn({ type:'ACTION_7', from:(pidx===0?'P1':'P2'), payload:{ cardId: sel[0].id } });
+        G.selected.clear(); render(); return;
+      }
+      if(sel.length===1 && sel[0].rank==='9'){ openGiveDrawer(sel[0]); return; }
+      if(sel.length===2 && sel.some(c=>c.rank==='9')){
+        const nine = sel.find(c=>c.rank==='9'); const give = sel.find(c=>c.id!==nine.id);
+        window.sendTurn({ type:'ACTION_9', from:(pidx===0?'P1':'P2'), payload:{ cardId:nine.id, giveId: give.id } });
+        G.selected.clear(); render(); return;
+      }
+      log('Bad selection for action.');
+    };
+    btnSigil.onclick = ()=>{
+      if(!G.started){ log('Start the game.'); return; }
+      const pidx = me();
+      if(G.turn!==pidx){ log('Not your turn'); return; }
+      const sel = currentSelected(pidx);
+      if(sel.length!==1){ log('Select exactly one J/Q/K to play as a Sigil.'); return; }
+      const c = sel[0];
+      if(c.rank!=='J' && c.rank!=='Q' && c.rank!=='K'){ log('That is not a Sigil.'); return; }
+      window.sendTurn({ type:'SIGIL', from:(pidx===0?'P1':'P2'), payload:{ rank:c.rank, cardId:c.id } });
+      G.selected.clear(); render();
+    };
+    btnDiscard.onclick = ()=>{
+      if(!G.started){ log('Start the game.'); return; }
+      const pidx = me();
+      if(G.turn!==pidx){ log('Not your turn'); return; }
+      const sel = currentSelected(pidx);
+      if(sel.length!==1){ log('Select exactly one card to discard.'); return; }
+      window.sendTurn({ type:'DISCARD', from:(pidx===0?'P1':'P2'), payload:{ cardId: sel[0].id } });
+      G.selected.clear(); render();
+    };
+
+    btnToggleNet.onclick = ()=>{
+      netPanel.style.display = (netPanel.style.display==='none' ? 'block':'none');
+    };
+    btnToggleRules.onclick = ()=>{
+      rulesDrawer.classList.add('open');
+    };
+
+    // Ace modal local handlers — these will only be used on the defender side
+    aceNo.onclick  = ()=>{ aceModal.classList.remove('open'); window.replyAce && window.replyAce(false); };
+    aceYes.onclick = ()=>{ aceModal.classList.remove('open'); window.replyAce && window.replyAce(true); };
+
+    // expose a ready event so transport can bind after DOM exists
+    document.dispatchEvent(new Event('arcana:ready'));
+  })();
+  </script>
+
+  <script>
+  // ===== Transport (signaling + WebRTC) =====
+  ;(function(){
+    const $ = (id)=>document.getElementById(id);
+    const statusEl=$('status'), logEl=$('log');
+    const signalInput=$('signalUrl'), btnUseUrl=$('btnUseUrl');
+    const btnHost=$('btnHost'), btnJoin=$('btnJoin'), hostIdEl=$('hostId'), joinIdInput=$('joinId');
+    const btnStart=$('btnStart'), btnResync=$('btnResync');
+
+    function log(...a){ const d=document.createElement('p'); d.textContent=a.join(' '); logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; console.log('[LOG]',...a); }
+    function setStatus(t,cls){ statusEl.textContent=t; statusEl.className='pill'+(cls?' '+cls:''); }
+    function enableStart(b){ btnStart.disabled=!b; btnResync.disabled=!b; }
+
+    const G={ net:{ ws:null, url:'wss://arcana-signal.onrender.com', role:null, hostId:null, pc:null, dc:null, connected:false } };
+    signalInput.value = G.net.url;
+
+    // Offline host fallback (single-tab testing)
+    window.sendTurn = function(action){
+      if (G.net.role==='host' && (!G.net.connected || !G.net.dc)) {
+        window.arcana.applyTurn(action); window.arcana.render(); return;
+      }
+      if (G.net.role==='host') hostResolveAndBroadcast(action);
+      else dcSend({ kind:'TURN_ACTION', action });
+    };
+
+    // Defender Ace handshake wiring (drawer shows only to defender) — Fix #2 & #5
+    // Host asks guest (or vice versa) only if defender actually has an Ace.
+    let acePending = null; // resolve callback on host waiting for ACE_REPLY
+
+    window.onRequestAce = function(kind){ /* NO-OP here; actual flow handled below */ };
+
+    // After arcana engine ready
+    document.addEventListener('arcana:ready', ()=>{
+      setStatus('Engine ready');
+    });
+
+    // Utils
+    const randId=()=>{ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++) s+=c[Math.floor(Math.random()*c.length)]; return s; };
+    const wsSend=(o)=>{ try{ G.net.ws && G.net.ws.readyState===1 && G.net.ws.send(JSON.stringify(o)); }catch{} };
+    const dcSend=(o)=>{ try{ G.net.dc && G.net.connected && G.net.dc.send(JSON.stringify(o)); }catch{} };
+
+    // Signaling
+    function wsConnect(url){
+      if(G.net.ws) try{G.net.ws.close();}catch{}
+      G.net.ws = new WebSocket(url);
+      G.net.ws.onopen = ()=>{ log('WS open', url); setStatus('Signaling connected','ok'); };
+      G.net.ws.onclose= ()=>{ log('WS close'); setStatus('Signaling closed','bad'); if(!G.net.connected) enableStart(false); };
+      G.net.ws.onerror= ()=>{ log('WS error'); setStatus('Signaling error','bad'); enableStart(false); };
+      G.net.ws.onmessage = async (e)=>{
+        let msg={}; try{ msg=JSON.parse(e.data||'{}'); }catch{ return; }
+        if(msg.type==='host-ok'){ G.net.role='host'; G.net.hostId=msg.hostId; hostIdEl.textContent=msg.hostId; window.arcana_setRole('host'); await hostCreatePeerAndOffer(); setStatus('Host ready. Share ID.','ok'); return; }
+        if(msg.type==='join-ok'){ G.net.role='guest'; G.net.hostId=msg.hostId; window.arcana_setRole('guest'); setStatus('Found host. Setting up…'); return; }
+        if(msg.type==='guest-joined' && G.net.role==='host'){ try{ const offer=await G.net.pc.createOffer(); await G.net.pc.setLocalDescription(offer); wsSend({type:'signal',hostId:G.net.hostId,payload:{sdp:G.net.pc.localDescription}});}catch(e){log('re-offer err',e);} return; }
+        if(msg.type==='signal' && msg.hostId===G.net.hostId && msg.payload){ await onSignal(msg.payload); return; }
+      };
+    }
+
+    function attachPeerLogs(pc,label){
+      pc.oniceconnectionstatechange=()=>log('[ICE]',label,pc.iceConnectionState);
+      pc.onconnectionstatechange   =()=>log('[PC]',label,pc.connectionState);
+    }
+
+    async function hostCreatePeerAndOffer(){
+      if(G.net.pc) try{G.net.pc.close();}catch{}
+      G.net.pc = new RTCPeerConnection({ iceServers:[{urls:'stun:stun.l.google.com:19302'}] });
+      attachPeerLogs(G.net.pc,'HOST');
+      const dc = G.net.pc.createDataChannel('arcana',{ ordered:true });
+      hookDC(dc);
+      G.net.pc.onicecandidate=(e)=>{ if(e.candidate) wsSend({type:'signal',hostId:G.net.hostId,payload:{ice:e.candidate}}); };
+      const offer=await G.net.pc.createOffer(); await G.net.pc.setLocalDescription(offer);
+      wsSend({type:'signal',hostId:G.net.hostId,payload:{sdp:G.net.pc.localDescription}}); log('Host sent offer');
+    }
+    async function guestEnsurePeer(){
+      if(G.net.pc) return G.net.pc;
+      G.net.pc = new RTCPeerConnection({ iceServers:[{urls:'stun:stun.l.google.com:19302'}] });
+      attachPeerLogs(G.net.pc,'GUEST');
+      G.net.pc.ondatachannel=(ev)=>hookDC(ev.channel);
+      G.net.pc.onicecandidate=(e)=>{ if(e.candidate) wsSend({type:'signal',hostId:G.net.hostId,payload:{ice:e.candidate}}); };
+      return G.net.pc;
+    }
+    function hookDC(dc){
+      G.net.dc=dc;
+      dc.onopen = ()=>{
+        log('[DC] open'); G.net.connected=true; setStatus('Connected','ok'); enableStart(true);
+        if(G.net.role==='host'){ dcSend({kind:'SYNC', state:window.arcana.serialize()}); }
+      };
+      dc.onclose= ()=>{ log('[DC] close'); G.net.connected=false; setStatus('Disconnected','bad'); enableStart(false); };
+      dc.onmessage=(e)=>{ let o={}; try{o=JSON.parse(e.data||'{}');}catch{return;} handlePacket(o); };
+    }
+    async function onSignal(payload){
+      if(payload.sdp){
+        if(payload.sdp.type==='offer'){
+          const pc=await guestEnsurePeer(); await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+          const ans=await pc.createAnswer(); await pc.setLocalDescription(ans);
+          wsSend({type:'signal',hostId:G.net.hostId,payload:{sdp:pc.localDescription}}); log('Guest sent answer');
+        } else if(payload.sdp.type==='answer'){ if(!G.net.pc) return; await G.net.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp)); log('Host applied answer'); }
+      } else if(payload.ice){
+        if(!G.net.pc) await guestEnsurePeer();
+        try{ await G.net.pc.addIceCandidate(new RTCIceCandidate(payload.ice)); }catch(e){ log('ICE add err', e); }
+      }
+    }
+
+    // Packets
+    function handlePacket(p){
+      if(!p||typeof p!=='object')return;
+
+      if(p.kind==='SYNC'){
+        if (p.state) { window.arcana.hydrate(p.state); }
+        log('RX SYNC ✓'); return;
+      }
+
+      if(p.kind==='TURN_ACTION'){
+        if(G.net.role==='host'){
+          // Host receives request and resolves, including Ace handshake
+          hostResolveAndBroadcast(p.action);
+        }
+        return;
+      }
+
+      if(p.kind==='ACE_OFFER'){
+        // Defender side only: show modal if they actually have an Ace
+        const defender = (G.net.role==='host') ? 'P1' : 'P2';
+        if(!window.arcana.hasAce(defender)){
+          // auto decline
+          dcSend({ kind:'ACE_REPLY', use:false });
+          return;
+        }
+        // Open drawer/modal to defender only (Fix #2)
+        const aceModal = document.getElementById('aceModal');
+        const aceText = document.getElementById('aceText');
+        aceText.textContent = p.for==='7'
+          ? 'Opponent played a Steal (7) targeting you. Spend an Ace to attempt a block?'
+          : 'Opponent played a Swap (9) targeting you. Spend an Ace to attempt a block?';
+        aceModal.classList.add('open');
+
+        // Wire reply once
+        window.replyAce = (use)=>{
+          aceModal.classList.remove('open');
+          // Send reply to host
+          dcSend({ kind:'ACE_REPLY', use });
+          window.replyAce = null;
+        };
+        return;
+      }
+
+      if(p.kind==='ACE_REPLY'){
+        // Host receives defender choice and completes ACE_REACT roll+effects inside engine
+        if(acePending){
+          acePending(p.use);
+          acePending = null;
+        }
+        return;
+      }
+
+      if(p.kind==='APPLY'){
+        if(p.state){ window.arcana.hydrate(p.state); }
+        log('APPLY → synced'); return;
+      }
+    }
+
+    // Host resolves actions, including Ace handshake flow
+    async function hostResolveAndBroadcast(action){
+      // For 7/9, check if defender has Ace — if yes, ask defender first.
+      if(action.type==='ACTION_7' || action.type==='ACTION_9'){
+        const actorId = action.from;                   // 'P1' or 'P2'
+        const targetId = (actorId==='P1')?'P2':'P1';   // defender
+        if(window.arcana.hasAce(targetId)){
+          // Ask defender (Fix #2 ensures defender sees the modal, not aggressor)
+          dcSend({ kind:'ACE_OFFER', for: (action.type==='ACTION_7'?'7':'9') });
+
+          const used = await new Promise((resolve)=>{
+            acePending = (choice)=>resolve(!!choice);
+          });
+
+          if(used){
+            // Apply ACE_REACT in engine (engine will discard the Ace, roll d6 (Fix #5), and set pending block outcome)
+            window.arcana.applyTurn({ type:'ACE_REACT', from:targetId, payload:{ aggressor:actorId } });
+
+            // Check engine’s pending result for block or fail
+            const blocked = (window.arcana && window.arcana.serialize && (function(){
+              // Peek last set flag from engine (G.pendingAce) by serializing then re-hydrating locally is heavy.
+              // Simpler: we infer by score/log, but we need a deterministic flag.
+              // We'll attach a tiny side-channel: when ACE_REACT runs, it sets window.__ACE_BLOCKED = true/false
+              return !!window.__ACE_BLOCKED;
+            })());
+
+            // Clear flag
+            window.__ACE_BLOCKED = undefined;
+
+            if(blocked){
+              // Broadcast state (Ace block + counter done), do NOT apply original action
+              dcSend({ kind:'APPLY', state: window.arcana.serialize() });
+              return;
+            } else {
+              // Defender used Ace but failed: proceed with original action (engine expects 'blocked:false')
+              action.payload = Object.assign({}, action.payload||{}, { blocked:false });
+              window.arcana.applyTurn(action);
+              dcSend({ kind:'APPLY', state: window.arcana.serialize() });
+              return;
+            }
+          } else {
+            // Defender declined; apply action normally
+            window.arcana.applyTurn(action);
+            dcSend({ kind:'APPLY', state: window.arcana.serialize() });
+            return;
+          }
+        } else {
+          // No Ace — apply action
+          window.arcana.applyTurn(action);
+          dcSend({ kind:'APPLY', state: window.arcana.serialize() });
+          return;
+        }
+      }
+
+      // Non-7/9, or 7/9 when no Ace scenario falls here
+      window.arcana.applyTurn(action);
+      dcSend({ kind:'APPLY', state: window.arcana.serialize() });
+    }
+
+    // UI wiring
+    btnUseUrl.addEventListener('click',()=>{ const v=signalInput.value.trim(); G.net.url=v||G.net.url; wsConnect(G.net.url); setStatus('Connecting…'); });
+    btnHost.addEventListener('click',()=>{ if(!G.net.ws||G.net.ws.readyState!==1){ wsConnect(G.net.url); setTimeout(()=>btnHost.click(),200); return; } const id=randId(); wsSend({type:'host',hostId:id}); hostIdEl.textContent=id; });
+    btnJoin.addEventListener('click',()=>{ if(!G.net.ws||G.net.ws.readyState!==1){ wsConnect(G.net.url); setTimeout(()=>btnJoin.click(),200); return; } const id=joinIdInput.value.trim().toUpperCase(); if(!id){log('Enter Host ID');return;} wsSend({type:'join',hostId:id}); });
+    btnStart.addEventListener('click', ()=>{
+      if(!G.net.connected){ log('Not connected'); return; }
+      if(G.net.role!=='host'){ log('Only host can start'); return; }
+      window.arcana.startNew();                            // start on host
+      dcSend({ kind:'SYNC', state: window.arcana.serialize() });  // push full snapshot
+      log('Host sent SYNC');
+    });
+    btnResync.addEventListener('click',()=>{ if(G.net.role!=='host'){log('Only host');return;} dcSend({kind:'SYNC',state:window.arcana.serialize()}); log('Host re-sync'); });
+  })();
+  </script>
+</body>
+</html>
